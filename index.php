@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Данный код позволяет очистить файл от комметариев и добавить их в отдельный файл "<name>_com.<extension>"
  * Создает в корне директорию "<name>"
  *
@@ -8,7 +8,7 @@
 
 /* !Инициализация основных переменных! */
 
-/*метод передачи файла: командной строкой*/
+/* метод передачи файла: командной строкой */
 if ($argc < 2) {
     exit('Ошибка переданных параметров');
 }
@@ -18,9 +18,9 @@ $nameFileString = ($argc > 2) ? ((str_contains($argv[2], '.') === true) ? strstr
 
 $extensionFile = strstr($openFileString, '.');                   // Расширение файла
 $nameComString = $nameFileString . '_com';                              // Наименование файла с комментариями
-$dirFiles = '\xampp\htdocs\skillbox\helpful\\' . $nameFileString;       // Наименование директории
+$dirFiles = '\xampp\htdocs\comments\working\\' . $nameFileString;       // Наименование директории
 
-/*
+/**
  * Проверка и открытие/создание всех необходимых для работы файлов
  */
 $openedFile = fopen($openFileString, 'r');
@@ -43,12 +43,13 @@ if ($madeFileCom === false) {
     exit('Ошибка открытия файла комментариев');
 }
 
-/*
+/**
  * //Основной код//
  * Перебирает каждый символ исходного файла в цикле, производитит проверку и записывает в нужный файл
  */
-$firstChar = '';                                                        // Первый считываемый символ
-$secondChar = '';                                                       // Второй считываемый символ
+$readString = null;
+$writeString = null;
+$checkup = null;
 $registers = [
     'php_flags' => [
         'code' => false,
@@ -60,147 +61,102 @@ $registers = [
 
 if (strcmp('.php', $extensionFile) === 0) {
 
-    while (($firstChar = fgetc($openedFile)) !== false) {
+    while (($readString = fgets($openedFile, 8192)) !== false) {
+        $writeString .= $readString;
         if ($registers['html_com_flag'] === true) {
 
-            if (strcmp('-', $firstChar) === 0) {
-                $secondChar = fgetc($openedFile);
-                if ($secondChar === false) {
-                    fwrite($madeFileCom, $firstChar);
-                    break;
-                }
-                $firstChar .= $secondChar;
-
-                if (strcmp('--', $firstChar) === 0) {
-                    $secondChar = fgetc($openedFile);
-                    if ($secondChar === false) {
-                        fwrite($madeFileCom, $firstChar);
-                        break;
-                    }
-                    $firstChar .= $secondChar;
-
-                    if (strcmp('-->', $firstChar) === 0) {
-                        $registers['html_com_flag'] = false;
-                        fwrite($madeFileCom, $firstChar. PHP_EOL);
-
-                    } else fwrite($madeFileCom, $firstChar);
-                } else fwrite($madeFileCom, $firstChar);
-            } else fwrite($madeFileCom, $firstChar);
+            if (($checkup = mb_strpos($writeString, '-->')) !== false) {
+                $registers['html_com_flag'] = false;
+                fwrite($madeFileCom, mb_substr($writeString, 0, $checkup+3));
+                $writeString = mb_substr($writeString, $checkup+3);
+            } else {
+                fwrite($madeFileCom, $writeString);
+                $writeString = '';
+            }
 
         } elseif ($registers['php_flags']['code'] === true) {
 
             if ($registers['php_flags']['comm'] === true) {
 
-                if (strcmp('*', $firstChar) === 0) {
-                    $secondChar = fgetc($openedFile);
-                    if ($secondChar === false) {
-                        fwrite($madeFileCom, $firstChar);
-                        break;
-                    }
-                    $firstChar .= $secondChar;
-
-                    if (strcmp('*/', $firstChar) === 0) {
-                        $registers['php_flags']['comm'] = false;
-                        fwrite($madeFileCom, $firstChar . PHP_EOL);
-
-                    } else fwrite($madeFileCom, $firstChar);
-                } else fwrite($madeFileCom, $firstChar);
+                if (($checkup = mb_strpos($writeString, '*/')) !== false) {
+                    $registers['php_flags']['comm'] = false;
+                    fwrite($madeFileCom, mb_substr($writeString, 0, $checkup+2));
+                    $writeString = mb_substr($writeString, $checkup+2);
+                } else {
+                    fwrite($madeFileCom, $writeString);
+                    $writeString = '';
+                }
 
             } elseif ($registers['php_flags']['strings']['apostrophe'] === true) {
 
-                if (strcmp("'", $firstChar) === 0) {
+                if (($checkup = mb_strpos($writeString, "'")) !== false) {
                     $registers['php_flags']['strings']['apostrophe'] = false;
-                    fwrite($madeFile, $firstChar);
-
-                } else fwrite($madeFile, $firstChar);
+                    fwrite($madeFile, mb_substr($writeString, 0, $checkup+1));
+                    $writeString = mb_substr($writeString, $checkup+1);
+                } else {
+                    fwrite($madeFile, $writeString);
+                    $writeString = '';
+                }
 
             } elseif ($registers['php_flags']['strings']['quotes'] === true) {
 
-                if (strcmp('"', $firstChar) === 0) {
+                if (($checkup = mb_strpos($writeString, '"')) !== false) {
                     $registers['php_flags']['strings']['quotes'] = false;
-                    fwrite($madeFile, $firstChar);
-
-                } else fwrite($madeFile, $firstChar);
+                    fwrite($madeFile, mb_substr($writeString, 0, $checkup+1));
+                    $writeString = mb_substr($writeString, $checkup+1);
+                } else {
+                    fwrite($madeFile, $writeString);
+                    $writeString = '';
+                }
 
             } else {
 
-                if (strcmp('/', $firstChar) === 0) {
-                    $secondChar = fgetc($openedFile);
-                    if ($secondChar === false) {
-                        fwrite($madeFile, $firstChar);
-                        break;
-                    }
-                    $firstChar .= $secondChar;
+                if (($checkup = mb_strpos($writeString, '/*')) !== false) {
+                    $registers['php_flags']['comm'] = true;
+                    fwrite($madeFile, mb_substr($writeString, 0, $checkup));
+                    $writeString = mb_substr($writeString, $checkup);
 
-                    if(strcmp('/*', $firstChar) === 0) {
-                        $registers['php_flags']['comm'] = true;
-                        fwrite($madeFileCom, $firstChar);
+                } elseif (($checkup = mb_strpos($writeString, '//')) !== false) {
+                    fwrite($madeFile, mb_substr($writeString, 0, $checkup) . PHP_EOL);
+                    fwrite($madeFileCom, mb_substr($writeString, $checkup));
+                    $writeString = '';
 
-                    } elseif (strcmp('//', $firstChar) === 0) {
-                        $secondChar = fgets($openedFile);
-                        if ($secondChar === false) {
-                            fwrite($madeFileCom, $firstChar);
-                            break;
-                        }
-                        fwrite($madeFileCom, $firstChar . $secondChar);
-                        fwrite($madeFile, PHP_EOL);
-
-                    } else fwrite($madeFile, $firstChar);
-
-                } elseif (strcmp("'", $firstChar) === 0) {
+                } elseif (($checkup = mb_strpos($writeString, "'")) !== false) {
                     $registers['php_flags']['strings']['apostrophe'] = true;
-                    fwrite($madeFile, $firstChar);
+                    fwrite($madeFile, mb_substr($writeString, 0, $checkup));
+                    $writeString = mb_substr($writeString, $checkup);
 
-                } elseif (strcmp('"', $firstChar) === 0) {
+                } elseif (($checkup = mb_strpos($writeString, '"')) !== false) {
                     $registers['php_flags']['strings']['quotes'] = true;
-                    fwrite($madeFile, $firstChar);
+                    fwrite($madeFile, mb_substr($writeString, 0, $checkup));
+                    $writeString = mb_substr($writeString, $checkup);
 
-                } else fwrite($madeFile, $firstChar);
+                } else {
+                    fwrite($madeFile, $writeString);
+                    $writeString = '';
+                }
             }
 
         } else {
 
-            if (strcmp('<', $firstChar) === 0) {
-                $secondChar = fgetc($openedFile);
-                if ($secondChar === false) {
-                    fwrite($madeFile, $firstChar);
-                    break;
-                }
-                $firstChar .= $secondChar;
+            if (($checkup = mb_strpos($writeString, '<?')) !== false) {
+                $registers['php_flags']['code'] = true;
+                fwrite($madeFile, mb_substr($writeString, 0, $checkup+2));
+                $writeString = mb_substr($writeString, $checkup+2);
 
-                if (strcmp('<?', $firstChar) === 0) {
-                    $registers['php_flags']['code'] = true;
-                    fwrite($madeFile, $firstChar);
-
-                } elseif (strcmp('<!', $firstChar) === 0) {
-                    $secondChar = fgetc($openedFile);
-                    if ($secondChar === false) {
-                        fwrite($madeFile, $firstChar);
-                        break;
-                    }
-                    $firstChar .= $secondChar;
-
-                    if (strcmp('<!-', $firstChar) === 0) {
-                        $secondChar = fgetc($openedFile);
-                        if ($secondChar === false) {
-                            fwrite($madeFile, $firstChar);
-                            break;
-                        }
-                        $firstChar .= $secondChar;
-
-                        if (strcmp('<!--', $firstChar) === 0) {
-                            $registers['html_com_flag'] = true;
-                            fwrite($madeFileCom, $firstChar);
-
-                        } else fwrite($madeFile, $firstChar);
-                    } else fwrite($madeFile, $firstChar);
-                } else fwrite($madeFile, $firstChar);
-            } else fwrite($madeFile, $firstChar);
+            } elseif (($checkup = mb_strpos($writeString, '<!--')) !== false) {
+                $registers['html_com_flag'] = true;
+                fwrite($madeFile, mb_substr($writeString, 0, $checkup));
+                $writeString = mb_substr($writeString, $checkup);
+            } else {
+                fwrite($madeFile, $writeString);
+                $writeString = '';
+            }
         }
     }
 } //else
 
-/*
+/**
  * Закрытие ранее открытых файлов
  */
 fclose($openedFile);
