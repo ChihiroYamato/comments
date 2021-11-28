@@ -1,2 +1,0 @@
-This file is testing for stage branch
-Итак это второй этап тестирования веток

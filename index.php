@@ -1,6 +1,5 @@
 <?php
-/**
- * Данный код позволяет очистить файл от комметариев и добавить их в отдельный файл "<name>_com.<extension>"
+/** Данный код позволяет очистить файл от комметариев и добавить их в отдельный файл "<name>_com.<extension>"
  * Создает в корне директорию "<name>"
  *
  * Принимаются файлы с расширением: .php
@@ -16,28 +15,24 @@ $openFileString = $argv[1];                                             // Ис�
                                                                         // Наимнование нового файла
 $nameFileString = ($argc > 2) ? ((str_contains($argv[2], '.') === true) ? strstr($argv[2], '.', true) : $argv[2]) : 'default';
 
-$extensionFile = strstr($openFileString, '.');                   // Расширение файла
+$extensionFile = strstr($openFileString, '.');                          // Расширение файла
 $nameComString = $nameFileString . '_com';                              // Наименование файла с комментариями
 $dirFiles = '\xampp\htdocs\comments\working\\' . $nameFileString;       // Наименование директории
 
 /**
  * Проверка и открытие/создание всех необходимых для работы файлов
  */
-$openedFile = fopen($openFileString, 'r');
-if ($openedFile === false) {
-    exit('Ошибка чтения файла');
-}
-if (mkdir($dirFiles) === false) {
+if (!($openedFile = fopen($openFileString, 'r'))) {exit('Ошибка чтения файла');}
+
+if (!mkdir($dirFiles)) {
     fclose($openedFile);
     exit('Ошибка создания директории');
 }
-$madeFile = fopen($dirFiles .'\\'. $nameFileString . $extensionFile, 'w');
-if ($madeFile === false) {
+if (!($madeFile = fopen($dirFiles .'\\'. $nameFileString . $extensionFile, 'w'))) {
     fclose($openedFile);
     exit('Ошибка открытия основного файла записи');
 }
-$madeFileCom = fopen($dirFiles .'\\'. $nameComString . '.txt', 'w');
-if ($madeFileCom === false) {
+if (!($madeFileCom = fopen($dirFiles .'\\'. $nameComString . '.txt', 'w'))) {
     fclose($openedFile);
     fclose($madeFile);
     exit('Ошибка открытия файла комментариев');
@@ -59,11 +54,11 @@ $registers = [
     'html_com_flag' => false,
 ];                                                                      // Массив с флагами для корректной работы цикла
 
-if (strcmp('.php', $extensionFile) === 0) {
+if ('.php' === $extensionFile) {
 
     while (($readString = fgets($openedFile, 8192)) !== false) {
         $writeString .= $readString;
-        if ($registers['html_com_flag'] === true) {
+        if ($registers['html_com_flag']) {
 
             if (($checkup = mb_strpos($writeString, '-->')) !== false) {
                 $registers['html_com_flag'] = false;
@@ -74,9 +69,9 @@ if (strcmp('.php', $extensionFile) === 0) {
                 $writeString = '';
             }
 
-        } elseif ($registers['php_flags']['code'] === true) {
+        } elseif ($registers['php_flags']['code']) {
 
-            if ($registers['php_flags']['comm'] === true) {
+            if ($registers['php_flags']['comm']) {
 
                 if (($checkup = mb_strpos($writeString, '*/')) !== false) {
                     $registers['php_flags']['comm'] = false;
@@ -87,7 +82,7 @@ if (strcmp('.php', $extensionFile) === 0) {
                     $writeString = '';
                 }
 
-            } elseif ($registers['php_flags']['strings']['apostrophe'] === true) {
+            } elseif ($registers['php_flags']['strings']['apostrophe']) {
 
                 if (($checkup = mb_strpos($writeString, "'")) !== false) {
                     $registers['php_flags']['strings']['apostrophe'] = false;
@@ -98,7 +93,7 @@ if (strcmp('.php', $extensionFile) === 0) {
                     $writeString = '';
                 }
 
-            } elseif ($registers['php_flags']['strings']['quotes'] === true) {
+            } elseif ($registers['php_flags']['strings']['quotes']) {
 
                 if (($checkup = mb_strpos($writeString, '"')) !== false) {
                     $registers['php_flags']['strings']['quotes'] = false;
@@ -159,6 +154,7 @@ if (strcmp('.php', $extensionFile) === 0) {
 /**
  * Закрытие ранее открытых файлов
  */
+
 fclose($openedFile);
 fclose($madeFile);
 fclose($madeFileCom);
