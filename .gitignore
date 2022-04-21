@@ -1,4 +1,8 @@
+# Default
 *.code-workspace
-\.idea
-/working/
-/.vscode/
+.idea/
+.vscode/
+
+# Test
+test*.*
+test/
